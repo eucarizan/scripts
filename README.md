@@ -25,7 +25,20 @@ file|description
 [validate.sh](./download_stream/lib/validate.sh)|check for missing file and ffmpeg installation
 [paths.sh](./download_stream/config/paths.sh)|configuration file
 
+<!--
+older version
+file|description
+:-:|:-:
+-->
 
+
+## compress videos
+- compress videos using ffmpeg
+
+compress file
+file|description
+:-:|:-:
+[compress.sh](./compress_videos/compress.sh)|ffmpeg extreme video compression
 <!--
 - includes safety checks to prevent errors
 -->
