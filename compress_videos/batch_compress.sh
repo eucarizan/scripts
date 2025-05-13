@@ -7,50 +7,57 @@ set -euo pipefail
 
 # Log setup
 LOG_FILE="batch-compress-$(date +%Y%m%d-%H.%M.%S).log"
-exec 3>&1
-exec &> >(tee -a "$LOG_FILE")
+
+log() {
+    local message="[$(date '+%Y-%m-%d %H:%M:%S')] $*"
+    echo "$message"
+    [[ -n "${LOG_FILE:-}" ]] && echo "$message" >> "$LOG_FILE"
+}
 
 compress_video() {
     local input="$1"
     local output="${input%.*}-x265.mp4"
-    local start_time=$(date +%s)
 
     # Skip if already compressed
-    [ -f "$output" ] && {
-        echo "[SKIP] $input (already compressed)"
-        return 0
-    }
+    if [ -f "$output" ]; then
+        log "[SKIP] $input (already compressed)"
+        return
+    fi
 
-    echo "[START] $input -> $output"
+    log "[START] $input -> $output"
+    local start_time end_time elapsed
+
+    start_time=$(date +%s)
 
     if ffmpeg -i "$input" \
         -c:v libx265 \
         -crf 28 \
         -preset slower \
-        -x265-params "no-sao=1:strong-intra-smoothing=0:limit-tu=4:qg-size=16:rc-lookahead=80" \
+        -x265-params \
+          "no-sao=1:strong-intra-smoothing=0:limit-tu=4:qg-size=16:rc-lookahead=80" \
         -vf "scale=1920:1080:flags=lanczos" \
         -c:a libopus \
         -b:a 64k \
         -movflags +faststart \
         "$output" 2>&1 | tee -a "$LOG_FILE"; then
-        local end_time=$(date +%s)
-        local elapsed=$((end_time - start_time))
-        echo "[DONE] $output compression time: $elapsed seconds"
-        return 0
+        end_time=$(date +%s)
+        elapsed=$((end_time - start_time))
+        log "[DONE] $output compression time: $elapsed seconds"
     else
-        local end_time=$(date +%s)
-        local elapsed=$((end_time - start_time))
-        echo "[FAILED] $output compression time: $elapsed seconds"
+        end_time=$(date +%s)
+        elapsed=$((end_time - start_time))
+        log "[FAILED] $output compression time: $elapsed seconds"
+        [[ -f "$output" ]] && "$output"
         return 1
     fi
 }
 
 total_start=$(date +%s)
 
-find . -maxdepth 1 -type f -name "*.mp4" -not -regex ".*x265.*" | while read -r file; do
+find . -maxdepth 1 -type f -name "*.mp4" -not -regex ".*x265.mp4" | cut -d'/' -f2 | while read -r file; do
     compress_video "$file"
 done
 
 total_end=$(date +%s)
 total_time=$((total_end - total_start))
-echo "Total time: $total_time seconds"
+log "Total time: $total_time seconds"
