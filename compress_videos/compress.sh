@@ -3,7 +3,7 @@
 # Set up logging
 LOG_FILE="${1%.*}-compression.log"
 exec 3>&1 # Save stdout descriptor
-exec > >(tee -a "$LOG_FILE") 2>&1
+exec &> >(tee -a "$LOG_FILE") 2>&1
 
 # log function with timestamp
 log() {
@@ -44,8 +44,7 @@ if ffmpeg -i "$1" \
     -vf "scale=1920:1080:flags=lanczos" \
     -c:a libopus -b:a 64k \
     -movflags +faststart \
-    "$OUTPUT" 2>&1 | tee -a "$LOG_FILE"
-then
+    "$OUTPUT" 2>&1 | tee -a "$LOG_FILE"; then
     log "Compression successful"
     log "Output file size: $(du -h "$OUTPUT" | cut -f1)"
 else
@@ -53,11 +52,11 @@ else
     [ -f "$OUTPUT" ] && rm "$OUTPUT"
     end_time=$(date +%s)
     elapsed=$((end_time - start_time))
-    log "Total time before failur: ${elapsed} seconds"
+    log "Total time before failure: ${elapsed} seconds"
     exit 1
 fi
 
 end_time=$(date +%s)
 elapsed=$((end_time - start_time))
-log "Total time: ${elapsed} seconds"
+log "Total time: $((elapsed/3600)) hr $(( (elapsed%3600)/60 )) min $((elapsed%60)) seconds"
 log "Process completed. Full log saved to: $LOG_FILE"
