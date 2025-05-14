@@ -1,4 +1,8 @@
 #!/usr/bin/env bash
+source lib/utils.sh
+
+init_logging
+
 if [ -z "$1" ]; then
     log "Error: Please provide input file as an argument."
     log "Usage: $0 input.mp4"
