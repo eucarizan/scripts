@@ -5,6 +5,13 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
+git_log_stat=$(git log --all --pretty=fomrat:"%h" --name-status | awk '/^[0-9a-f]{7,}$/ { hash = $0; next }; /^[A-Z]\t/ { split ($0, a, "\t"); print hash ";" a[1] ";" a[2] } ' | grep ";.*$1$" 2>/dev/null)
+
+if [ -z "$git_log_stat" ]; then
+    echo "Error: File '$1' not found in git history"
+    exit 1
+fi
+
 #hash_latest=$(git log -1 --all --pretty=format:%h --follow -- "$1" 2>/dev/null)
 #
 #if [ -z "$hash_latest" ]; then
@@ -25,9 +32,3 @@ fi
 #hash:path/to/file/file.ext
 #git log --all --pretty=format:"%h" --name-only | awk '/^[0-9a-f]{7,}$/ { hash = $0; next }; $0 != "" { print hash ":" $0 }' | grep "$1$"
 
-git log --all --pretty=format:"%h" --name-status \
-    | awk '
-        /^[0-9a-f]{7,}$/ { hash = $0; next }
-        /^[A-Z]\t/ { split($0, a, "\t"); print hash ";" a[1] ";" a[2] }
-        ' \
-    | grep ";.*$1$"
