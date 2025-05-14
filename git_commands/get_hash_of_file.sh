@@ -5,7 +5,7 @@ if [ -z "$1" ]; then
     exit 1
 fi
 
-git_log_stat=$(git log --all --pretty=format:"%h" --name-status 2>/dev/null | awk '/^[0-9a-f]{7,}$/ { hash = $0; next }; /^[A-Z]\t/ { split ($0, a, "\t"); print hash ";" a[1] ";" a[2] } ' | grep ";.*$1$")
+git_log_stat=$(git log --all --pretty=format:"%h" --name-status 2>/dev/null | awk '/^[0-9a-f]{7,}$/ { hash = $0; next }; /^[A-Z]\t/ { split ($0, a, "\t"); print a[1] ";" hash ";" a[2] } ' | grep ";.*$1$")
 
 if [ -z "$git_log_stat" ]; then
     echo "Error: File '$1' not found in git history"
