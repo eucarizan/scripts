@@ -7,7 +7,7 @@ exec &> >(tee -a "$LOG_FILE") 2>&1
 
 # log function with timestamp
 log() {
-    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $1" | tee /dev/fd/3
+    echo "[$(date '+%Y-%m-%d %H:%M:%S')] $*" | tee /dev/fd/3
 }
 
 if [ -z "$1" ]; then
@@ -29,12 +29,7 @@ fi
 OUTPUT="${1%.*}-x265.mp4"
 
 start_time=$(date +%s)
-log "Starting compression: $1 -> $OUTPUT"
-log "FFmpeg settings:"
-log "  Codec: H.265/HEVC (libx265)"
-log "  CRF: 28 | Preset: slower"
-log "  Audio: Opus @ 65kbit/s"
-log "  Resolution: 1920x1080 (lanczos)"
+log "[START] Processing: $1"
 
 if ffmpeg -i "$1" \
     -c:v libx265 \
@@ -45,18 +40,16 @@ if ffmpeg -i "$1" \
     -c:a libopus -b:a 64k \
     -movflags +faststart \
     "$OUTPUT" 2>&1 | tee -a "$LOG_FILE"; then
-    log "Compression successful"
-    log "Output file size: $(du -h "$OUTPUT" | cut -f1)"
+    end_time=$(date +%s)
+    elapsed=$((end_time - start_time))
+    log "[DONE] $OUTPUT, $((elapsed/3600))h $(( (elapsed%3600)/60 ))m $((elapsed%60))s"
 else
     log "Compression failed with exit code $?"
     [ -f "$OUTPUT" ] && rm "$OUTPUT"
     end_time=$(date +%s)
     elapsed=$((end_time - start_time))
-    log "Total time before failure: ${elapsed} seconds"
+    log "[FAIL] $output, $((elapsed/3600))h $(( (elapsed%3600)/60 ))m $((elapsed%60))s"
     exit 1
 fi
 
-end_time=$(date +%s)
-elapsed=$((end_time - start_time))
-log "Total time: $((elapsed/3600)) hr $(( (elapsed%3600)/60 )) min $((elapsed%60)) seconds"
 log "Process completed. Full log saved to: $LOG_FILE"
